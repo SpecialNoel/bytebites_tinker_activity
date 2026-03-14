@@ -63,7 +63,7 @@ class Order:
         if quantity < 1:
             raise ValueError("quantity must be at least 1")
         for _ in range(quantity):
-            self.items[item] = self.items.get(item, 0) + quantity
+            self.items[item] = self.items.get(item, 0) + 1
 
     def remove_item(self, item: FoodItem, quantity: int=1) -> None:
         if item not in self.items:

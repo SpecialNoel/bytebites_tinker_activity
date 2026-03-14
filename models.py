@@ -52,21 +52,33 @@ class FoodItem:
 
 class Order:
     def __init__(self, items: list[FoodItem] | None = None):
-        self.items: list[FoodItem] = []
+        self.items: list[FoodItem, int] = {}
         if items:
             for item in items:
                 self.add_item(item)
 
-    def add_item(self, item: FoodItem) -> None:
+    def add_item(self, item: FoodItem, quantity: int=1) -> None:
         if not isinstance(item, FoodItem):
             raise TypeError("item must be a FoodItem")
-        self.items.append(item)
+        if quantity < 1:
+            raise ValueError("quantity must be at least 1")
+        for _ in range(quantity):
+            self.items[item] = self.items.get(item, 0) + quantity
 
-    def remove_item(self, item: FoodItem) -> None:
-        self.items.remove(item)
+    def remove_item(self, item: FoodItem, quantity: int=1) -> None:
+        if item not in self.items:
+            raise ValueError("item not in order")
+        if quantity < 1:
+            raise ValueError("quantity must be at least 1")
+        if self.items[item] <= quantity:
+            del self.items[item] # Remove the item completely from order
+        else:
+            self.items[item] -= quantity # Remove the item by specified quantity
 
+    # Part3: calculate the total cost of the order
+    # This function should return the total cost of the order.
     def get_total_cost(self) -> float:
-        return sum(item.price for item in self.items)
+        return sum(item.price * quantity for item, quantity in self.items.items())
 
     def get_item_count(self) -> int:
         return len(self.items)
@@ -76,12 +88,9 @@ class Order:
 
     def to_dict(self) -> dict[str, object]:
         return {
-            "items": [item.to_dict() for item in self.items],
+            "items": [{"item": item.name, "quantity": qty} for item, qty in self.items.items()],
             "total_cost": self.get_total_cost(),
         }
-
-    def __repr__(self) -> str:
-        return f"Order(items={len(self.items)}, total={self.get_total_cost():.2f})"
     
 
 class Customer:
@@ -118,13 +127,22 @@ class Menu:
     def remove_item(self, item: FoodItem) -> None:
         self.items.remove(item)
 
+    # Part3: filter the menu by the category of the food item 
+    # This function should return the menu filtered by the category of the food item. 
     def filter_by_category(self, category: str) -> list[FoodItem]:
+        if not isinstance(category, str) or not category.strip(): return []
         category_norm = category.strip().lower()
-        return [
-            item
-            for item in self.items
-            if item.category.strip().lower() == category_norm
-        ]
+        return [item for item in self.items if item.category.strip().lower() == category_norm]
+    
+    # Part3: sorting the menu descendingly by the popularity rating of the food item
+    # This function should return the menu sorted by the rating of the food item in descending order. 
+    def sort_by_rating(self) -> list[FoodItem]:
+        return sorted(self.items, key=lambda item: item.popularity_rating, reverse=True)
+    
+    # Part3: sorting the menu ascendingly by the price of the food item
+    # This function should return the menu sorted by the price of the food item in ascending order. 
+    def sort_by_price(self) -> list[FoodItem]:
+        return sorted(self.items, key=lambda item: item.price)
 
     def get_categories(self) -> set[str]:
         return {item.category for item in self.items}
@@ -134,5 +152,5 @@ class Menu:
         return [item for item in self.items if item.name.strip().lower() == name_norm]
 
     def __repr__(self) -> str:
-        return f"Menu(items={len(self.items)})"
+        return f"Menu(items={self.items})"
     
